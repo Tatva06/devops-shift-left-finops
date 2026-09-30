@@ -1,28 +1,34 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
+name: Shift-Left FinOps (Infracost)
 
-provider "aws" {
-  region = "ap-south-1" 
-}
+on:
+  pull_request:
+    types: [opened, synchronize, closed]
 
-# Baseline: A cheap $7/month server
-resource "aws_instance" "web_app" {
-  ami           = "ami-0c55b159cbfafe1f0"
-  instance_type = "t3.micro"
+jobs:
+  infracost_cost_estimation:
+    name: Run Cost Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
 
-  root_block_device {
-    volume_size = 20
-    volume_type = "gp3"
-  }
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        if: github.event.action != 'closed'
+        with:
+          path: head
 
-  tags = {
-    Environment = "Staging"
-    Project     = "IA-2 Demo"
-  }
-}
+      - name: Checkout base branch
+        uses: actions/checkout@v4
+        if: github.event.action != 'closed'
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          path: base
+
+      - name: Generate Infracost Report
+        uses: infracost/actions/diff@v4
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+          base-path: base
+          head-path: head
