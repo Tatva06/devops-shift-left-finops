@@ -32,3 +32,18 @@ jobs:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
           base-path: base
           head-path: head
+          path-to-infracost-json: infracost-result.json
+
+      - name: Enforce FinOps Budget Gate
+        run: |
+          # Extract the total cost difference using jq
+          DIFF_COST=$(jq -r '.diffTotalMonthlyCost // 0' infracost-result.json)
+          echo "The PR changes the monthly bill by: \$$DIFF_COST"
+          
+          # If the cost increase is greater than $50, fail the pipeline
+          if (( $(echo "$DIFF_COST > 50.00" | bc -l) )); then
+            echo "❌ FinOps Guardrail Violation: Cost increase (\$$DIFF_COST) exceeds the monthly limit of $50!"
+            exit 1
+          else
+            echo "✅ Budget check passed."
+          fi
