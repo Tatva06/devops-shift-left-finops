@@ -13,7 +13,7 @@ provider "aws" {
 
 resource "aws_instance" "chatbot_server" {
   ami           = "ami-0ba259e664698cbfc"
-  instance_type = "m5.4xlarge"
+  instance_type = "t2.micro"
 
   tags = {
     Name        = "Chatbot-Production-Server"
@@ -21,3 +21,4 @@ resource "aws_instance" "chatbot_server" {
     Project     = "DevOps-Lab"
   }
 }
+
