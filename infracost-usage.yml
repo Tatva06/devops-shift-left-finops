@@ -1,0 +1,6 @@
+version: 0.1
+resource_usage:
+  aws_instance.web_app:
+    monthly_egress_data_transfer_gb: 500 
+  aws_db_instance.database:
+    monthly_storage_data_transfer_gb: 100

@@ -7,32 +7,35 @@ on:
 jobs:
   infracost_cost_estimation:
     name: Run Cost Analysis
+    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
+      actions: read
 
     steps:
       - name: Checkout PR branch
         uses: actions/checkout@v4
-        if: github.event.action != 'closed'
         with:
           path: head
 
       - name: Checkout base branch
         uses: actions/checkout@v4
-        if: github.event.action != 'closed'
         with:
           ref: ${{ github.event.pull_request.base.ref }}
           path: base
 
-      - name: Generate Infracost Report
-        uses: infracost/actions/diff@v4
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
         with:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
-          base-path: base
-          head-path: head
-          path-to-infracost-json: infracost-result.json
+
+      - name: Generate Infracost Baseline
+        run: infracost breakdown --path base --format json --out-file infracost-base.json
+
+      - name: Generate Infracost Diff Report
+        run: infracost diff --path head --compare-to infracost-base.json --format json --out-file infracost-result.json
 
       - name: Enforce FinOps Budget Gate
         run: |
